@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Parcel Sandbox</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+
+  <body>
+    <style>
+      html {
+        overflow: hidden;
+      }
+      body {
+        overscroll-behavior: none;
+        overflow: scroll;
+      }
+      .pullable {
+        position: relative;
+        overflow: scroll;
+        height: 400px;
+        border: 1px solid black;
+      }
+      .virtual {
+        position: absolute;
+        transform: translatey(-20px);
+      }
+      .content {
+        height: 2000px;
+      }
+    </style>
+    <div id="app">
+      <div class="pullable">
+        <div class="virtual">
+          hi
+        </div>
+        <div class="content">
+          pull to refresh
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function $(query) {
+        return document.querySelector(query);
+      }
+      const pullable = $(".pullable");
+      const virtual = $(".virtual");
+      const content = $(".content");
+      let offset = 0;
+      let firstTouch = null;
+      let defaultHeight = virtual.getBoundingClientRect().height;
+      pullable.addEventListener("touchstart", touchStartHandler, {
+        passive: true
+      });
+      pullable.addEventListener("touchend", touchEndHandler, { passive: true });
+      pullable.addEventListener("touchmove", touchMoveHandler, {
+        passive: true
+      });
+      function touchStartHandler(event) {
+        if (pullable.scrollTop !== 0) return;
+        console.log(pullable.scrollTop);
+        firstTouch = getFirstTouch(event);
+        virtual.style.transitionDuration = content.style.transitionDuration = null;
+      }
+      function touchEndHandler(event) {
+        if (!firstTouch) return;
+        firstTouch = null;
+        moveVirtualDown(0);
+      }
+      function touchMoveHandler(event) {
+        if (pullable.scrollTop === 0) {
+          touchStartHandler(event);
+          return;
+        }
+        if (!firstTouch) return;
+        const touch = getFirstTouch(event);
+        const offsetY = touch.clientY - firstTouch.clientY;
+        if (offsetY > 0) {
+          moveVirtualDown(offsetY);
+        }
+      }
+      function getFirstTouch(touchEvent) {
+        /*
+      touches - a list of all of the touch points currently on the screen.
+      targetTouches - a list of the touch points on the target DOM element.
+      changedTouches - a list of the touch points whose items depends on the associated event type:
+      For the touchstart event, it is a list of the touch points that became active with the current event.
+      For the touchmove event, it is a list of the touch points that have changed since the last event.
+      For the touchend event, it is a list of the touch points that have been removed from the surface (that is, the set of touch points corresponding to fingers no longer touching the surface).
+      */
+        return touchEvent.targetTouches[0];
+      }
+      function moveVirtualDown(offset) {
+        virtual.style.transform = `translatey(${-defaultHeight + offset}px)`;
+        content.style.marginTop = `${offset}px`;
+        if (offset === 0) {
+          virtual.style.transitionDuration = "1s";
+          content.style.transitionDuration = "1s";
+        }
+      }
+    </script>
+  </body>
+</html>
