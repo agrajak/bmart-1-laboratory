@@ -57,6 +57,7 @@
       pullable.addEventListener("touchmove", touchMoveHandler, {
         passive: true
       });
+      // 커밋 테스트
       function touchStartHandler(event) {
         if (pullable.scrollTop !== 0) return;
         console.log(pullable.scrollTop);
