@@ -5,12 +5,14 @@
   "main": "index.html",
   "scripts": {
     "start": "parcel index.html --open",
-    "build": "parcel build index.html"
+    "build": "parcel build index.html",
+    "deploy": "parcel build index.html --public-url . && push-dir --dir=dist --branch=gh-pages"
   },
   "dependencies": {},
   "devDependencies": {
     "@babel/core": "7.2.0",
-    "parcel-bundler": "^1.6.1"
+    "parcel-bundler": "^1.6.1",
+    "push-dir": "^0.4.1"
   },
   "keywords": [
     "javascript",
