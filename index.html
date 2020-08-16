@@ -45,8 +45,14 @@
     </div>
 
     <script>
+      let action = null;
+      const NO_ACTION = 0;
+      const PULLING = 1;
+      const RELEASING = 2;
+      const WAITING = 3;
+      const RESETING = 4;
       const MAX_PULL_LENGTH = 600;
-      const SHOW_DURATION = 2500;
+      const SHOW_DURATION = 800;
       const ITEM_LENGTH = MAX_PULL_LENGTH / 8;
       const ITEM_LIST = [
         "김치찌개",
@@ -85,17 +91,17 @@
       }
       function touchStartHandler(event) {
         if (pullable.scrollTop !== 0) return;
+        action = PULLING;
         firstTouch = getFirstTouch(event);
         virtual.style.transitionDuration = null;
       }
       function touchEndHandler(event) {
-        if (!firstTouch) return;
-        firstTouch = null;
+        if (action !== PULLING) return;
+        action = RELEASING;
         moveVirtualDown(defaultHeight);
-        virtual.style.transitionDuration = "1.5s";
       }
       function touchMoveHandler(event) {
-        if (!firstTouch) return;
+        if (action !== PULLING) return;
         const touch = getFirstTouch(event);
         const offsetY = touch.clientY - firstTouch.clientY;
         if (offsetY > 0) {
@@ -109,7 +115,14 @@
         return 1 - (1 - r) ** 3;
       }
       function moveVirtualDown(offset) {
-        virtual.style.marginTop = `${+offset}px`;
+        let duration = null;
+        if (action === RELEASING) {
+          duration = "1.5s";
+        } else if (action === RESETING) {
+          duration = "0.3s";
+        }
+        virtual.style.transitionDuration = duration;
+        virtual.style.marginTop = `${offset}px`;
       }
       function pullVirtualDown(offset) {
         let y = offset;
@@ -121,31 +134,33 @@
         y /= 2;
         moveVirtualDown(y);
       }
+      function moveMenu(offset, N) {
+        menu.style.transform = `translatey(${offset}px)`;
+        menu.style.opacity = offset < 0 ? (N - offset) / N : 1 - offset / N;
+      }
+      function almostSame(a, b) {
+        return Math.abs(a * 10e5 - b * 10e5) < 10;
+      }
       let idx = null;
       function animate(t) {
-        const y = parseFloat(getComputedStyle(virtual).marginTop);
-        const targetY = parseFloat(virtual.style.marginTop);
-        if (y != 0) {
+        if (action == PULLING || action == RELEASING) {
+          const y = parseFloat(getComputedStyle(virtual).marginTop);
+          const targetY = parseFloat(virtual.style.marginTop);
           const NN = defaultHeight,
-            N = defaultHeight / 2;
+            N = NN / 2;
           const newIdx = Math.floor((y + N) / NN);
           if (idx === null || newIdx !== idx) {
             menu.innerText = pickRandomItem();
             idx = newIdx;
           }
-          let r = ((y + N) % NN) - N;
-          menu.style.transform = `translatey(${r}px)`;
-          menu.style.opacity = r < 0 ? (N - r) / N : 1 - r / N;
+          moveMenu(((y + N) % NN) - N, N);
+          if (action == RELEASING && almostSame(y, targetY)) {
+            action = WAITING;
+            resetAt = t + SHOW_DURATION;
+          }
         }
-        if (
-          firstTouch === null &&
-          Math.abs(targetY * 10e5 - defaultHeight * 10e5) < 10 &&
-          resetAt == null
-        ) {
-          resetAt = t + SHOW_DURATION;
-        }
-        if (resetAt !== null && resetAt < t) {
-          resetAt = null;
+        if (action === WAITING && resetAt < t) {
+          action = RESETING;
           moveVirtualDown(0);
         }
 
