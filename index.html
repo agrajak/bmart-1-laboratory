@@ -46,18 +46,18 @@
 
     <script>
       const MAX_PULL_LENGTH = 600;
-      const SHOW_DURATION = 1500;
+      const SHOW_DURATION = 2500;
       const ITEM_LENGTH = MAX_PULL_LENGTH / 8;
       const ITEM_LIST = [
         "김치찌개",
         "샐러드",
         "감자전",
         "돈까스",
-        "진짜",
-        "맛있다",
-        "다음에도",
+        "삼겹살",
+        "천엽",
+        "엄마는외계인",
         "짬뽕",
-        "이히히히",
+        "고려국시",
         "오호오호호"
       ];
       function $(query) {
@@ -70,6 +70,7 @@
       let offset = 0;
       let firstTouch = null;
       let defaultHeight = virtual.getBoundingClientRect().height;
+      let resetAt = null;
       virtual.style.transform = `translatey(${-defaultHeight}px)`;
       content.style.marginTop = `${-defaultHeight}px`;
       pullable.addEventListener("touchstart", touchStartHandler, {
@@ -79,7 +80,9 @@
       pullable.addEventListener("touchmove", touchMoveHandler, {
         passive: true
       });
-      // 커밋 테스트
+      function pickRandomItem() {
+        return ITEM_LIST[parseInt(ITEM_LIST.length * Math.random())];
+      }
       function touchStartHandler(event) {
         if (pullable.scrollTop !== 0) return;
         firstTouch = getFirstTouch(event);
@@ -118,14 +121,21 @@
         y /= 2;
         moveVirtualDown(y);
       }
-      let resetAt = null;
+      let idx = null;
       function animate(t) {
         const y = parseFloat(getComputedStyle(virtual).marginTop);
         const targetY = parseFloat(virtual.style.marginTop);
         if (y != 0) {
-          const N = defaultHeight;
-          let r = ((y + N / 2) % N) - N / 2;
+          const NN = defaultHeight,
+            N = defaultHeight / 2;
+          const newIdx = Math.floor((y + N) / NN);
+          if (idx === null || newIdx !== idx) {
+            menu.innerText = pickRandomItem();
+            idx = newIdx;
+          }
+          let r = ((y + N) % NN) - N;
           menu.style.transform = `translatey(${r}px)`;
+          menu.style.opacity = r < 0 ? (N - r) / N : 1 - r / N;
         }
         if (
           firstTouch === null &&
@@ -135,7 +145,6 @@
           resetAt = t + SHOW_DURATION;
         }
         if (resetAt !== null && resetAt < t) {
-          // alert("beep");
           resetAt = null;
           moveVirtualDown(0);
         }
